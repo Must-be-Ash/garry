@@ -3,12 +3,12 @@ import LeaderboardModal from './LeaderboardModal'
 
 export default function Game() {
   const [score, setScore] = useState(0)
-  const [speed, setSpeed] = useState(1)
+  const [speed, setSpeed] = useState(5) // Start with a higher speed
   const [gameOver, setGameOver] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   
   const canvasRef = useRef(null)
-  const playerRef = useRef({ y: 300, jumping: false })
+  const playerRef = useRef({ y: 0, yVelocity: 0, jumping: false, doubleJump: false })
   const coinsRef = useRef([])
   const barriersRef = useRef([])
 
@@ -17,12 +17,19 @@ export default function Game() {
     const ctx = canvas.getContext('2d')
     let animationFrameId
 
+    // Set canvas size to cover the screen
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+
     const player = new Image()
     player.src = '/player.png'
     const coin = new Image()
     coin.src = '/coin.png'
     const barrier = new Image()
     barrier.src = '/barrier.png'
+
+    const GROUND_Y = canvas.height - 100 // Ground position
+    playerRef.current.y = GROUND_Y - 50 // Initial player position
 
     const gameLoop = () => {
       ctx.fillStyle = '#1e1e1e'
@@ -44,24 +51,30 @@ export default function Game() {
       })
 
       // Update and draw barriers
-      barriersRef.current.forEach((barrierObj) => {
+      barriersRef.current.forEach((barrierObj, index) => {
         barrierObj.x -= speed
-        ctx.drawImage(barrier, barrierObj.x, barrierObj.y, 50, 100)
+        ctx.drawImage(barrier, barrierObj.x, GROUND_Y - 100, 50, 100)
         
         // Check collision with player
-        if (Math.abs(barrierObj.x - 50) < 40 && Math.abs(barrierObj.y - playerRef.current.y) < 40) {
+        if (barrierObj.x < 100 && barrierObj.x > 0 && playerRef.current.y + 50 > GROUND_Y - 100) {
           setGameOver(true)
+        }
+
+        // Remove barriers that have gone off screen
+        if (barrierObj.x < -50) {
+          barriersRef.current.splice(index, 1)
         }
       })
 
       // Handle jumping
-      if (playerRef.current.jumping) {
-        playerRef.current.y -= 5
-        if (playerRef.current.y <= 200) {
-          playerRef.current.jumping = false
-        }
-      } else if (playerRef.current.y < 300) {
-        playerRef.current.y += 5
+      playerRef.current.y += playerRef.current.yVelocity
+      playerRef.current.yVelocity += 0.5 // Gravity
+
+      if (playerRef.current.y > GROUND_Y - 50) {
+        playerRef.current.y = GROUND_Y - 50
+        playerRef.current.yVelocity = 0
+        playerRef.current.jumping = false
+        playerRef.current.doubleJump = false
       }
 
       // Display score and speed
@@ -87,10 +100,10 @@ export default function Game() {
     // Generate coins and barriers
     const generateObjects = () => {
       if (Math.random() < 0.02) {
-        coinsRef.current.push({ x: canvas.width, y: Math.random() * (canvas.height - 50) })
+        coinsRef.current.push({ x: canvas.width, y: Math.random() * (canvas.height - 150) + 50 })
       }
       if (Math.random() < 0.01) {
-        barriersRef.current.push({ x: canvas.width, y: 250 })
+        barriersRef.current.push({ x: canvas.width })
       }
     }
 
@@ -98,8 +111,12 @@ export default function Game() {
 
     // Handle jump
     const handleJump = () => {
-      if (playerRef.current.y === 300) {
+      if (!playerRef.current.jumping) {
+        playerRef.current.yVelocity = -12
         playerRef.current.jumping = true
+      } else if (!playerRef.current.doubleJump) {
+        playerRef.current.yVelocity = -10
+        playerRef.current.doubleJump = true
       }
     }
 
@@ -111,30 +128,43 @@ export default function Game() {
 
     canvas.addEventListener('touchstart', handleJump)
 
+    // Handle window resize
+    const handleResize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+      GROUND_Y = canvas.height - 100
+      playerRef.current.y = GROUND_Y - 50
+    }
+
+    window.addEventListener('resize', handleResize)
+
     return () => {
       cancelAnimationFrame(animationFrameId)
       clearInterval(speedInterval)
       clearInterval(objectInterval)
       window.removeEventListener('keydown', handleJump)
       canvas.removeEventListener('touchstart', handleJump)
+      window.removeEventListener('resize', handleResize)
     }
   }, [score, speed, gameOver])
 
   return (
-    <div style={{backgroundColor: '#2e2e2e', padding: '20px'}}>
-      <canvas ref={canvasRef} width={800} height={400} style={{border: '1px solid white'}} />
+    <div style={{backgroundColor: '#2e2e2e', padding: '0', margin: '0', height: '100vh', overflow: 'hidden'}}>
+      <canvas ref={canvasRef} style={{display: 'block'}} />
       {showLeaderboard && (
         <LeaderboardModal score={score} onClose={() => {
           setShowLeaderboard(false)
           setGameOver(false)
           setScore(0)
-          setSpeed(1)
-          playerRef.current = { y: 300, jumping: false }
+          setSpeed(5)
+          playerRef.current = { y: 0, yVelocity: 0, jumping: false, doubleJump: false }
           coinsRef.current = []
           barriersRef.current = []
         }} />
       )}
-      <p style={{color: 'white'}}>Instructions: Press space to jump or tap the screen if you're on mobile.</p>
+      <p style={{color: 'white', position: 'absolute', bottom: '10px', left: '10px'}}>
+        Instructions: Press space to jump or tap the screen if you're on mobile. Double tap for double jump.
+      </p>
     </div>
   )
 }
