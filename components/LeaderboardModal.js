@@ -25,7 +25,17 @@ export default function LeaderboardModal({ score, onClose }) {
   }
 
   return (
-    <div className="modal">
+    <div style={{
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      padding: '20px',
+      borderRadius: '10px',
+      color: 'white',
+      textAlign: 'center'
+    }}>
       <h2>Game Over</h2>
       <p>Your score: {score}</p>
       <form onSubmit={handleSubmit}>
@@ -34,16 +44,17 @@ export default function LeaderboardModal({ score, onClose }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter your name"
+          style={{margin: '10px 0'}}
         />
-        <button type="submit">Submit Score</button>
+        <button type="submit" style={{margin: '0 10px'}}>Save Score</button>
+        <button onClick={onClose}>Restart Game</button>
       </form>
       <h3>Leaderboard</h3>
-      <ul>
+      <ul style={{listStyle: 'none', padding: 0}}>
         {leaderboard.map((entry, index) => (
           <li key={index}>{entry.name}: {entry.score}</li>
         ))}
       </ul>
-      <button onClick={onClose}>Restart Game</button>
     </div>
   )
 }
