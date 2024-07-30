@@ -11,6 +11,7 @@ export default function Game() {
   const playerRef = useRef({ y: 0, yVelocity: 0, jumping: false, doubleJump: false })
   const coinsRef = useRef([])
   const barriersRef = useRef([])
+  const groundYRef = useRef(0)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -28,8 +29,8 @@ export default function Game() {
     const barrier = new Image()
     barrier.src = '/barrier.png'
 
-    const GROUND_Y = canvas.height - 100 // Ground position
-    playerRef.current.y = GROUND_Y - 50 // Initial player position
+    groundYRef.current = canvas.height - 100 // Ground position
+    playerRef.current.y = groundYRef.current - 50 // Initial player position
 
     const gameLoop = () => {
       ctx.fillStyle = '#1e1e1e'
@@ -53,10 +54,10 @@ export default function Game() {
       // Update and draw barriers
       barriersRef.current.forEach((barrierObj, index) => {
         barrierObj.x -= speed
-        ctx.drawImage(barrier, barrierObj.x, GROUND_Y - 100, 50, 100)
+        ctx.drawImage(barrier, barrierObj.x, groundYRef.current - 100, 50, 100)
         
         // Check collision with player
-        if (barrierObj.x < 100 && barrierObj.x > 0 && playerRef.current.y + 50 > GROUND_Y - 100) {
+        if (barrierObj.x < 100 && barrierObj.x > 0 && playerRef.current.y + 50 > groundYRef.current - 100) {
           setGameOver(true)
         }
 
@@ -70,8 +71,8 @@ export default function Game() {
       playerRef.current.y += playerRef.current.yVelocity
       playerRef.current.yVelocity += 0.5 // Gravity
 
-      if (playerRef.current.y > GROUND_Y - 50) {
-        playerRef.current.y = GROUND_Y - 50
+      if (playerRef.current.y > groundYRef.current - 50) {
+        playerRef.current.y = groundYRef.current - 50
         playerRef.current.yVelocity = 0
         playerRef.current.jumping = false
         playerRef.current.doubleJump = false
@@ -132,8 +133,8 @@ export default function Game() {
     const handleResize = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
-      GROUND_Y = canvas.height - 100
-      playerRef.current.y = GROUND_Y - 50
+      groundYRef.current = canvas.height - 100
+      playerRef.current.y = groundYRef.current - 50
     }
 
     window.addEventListener('resize', handleResize)
