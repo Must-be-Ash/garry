@@ -158,7 +158,7 @@ export default function Game() {
           setGameOver(false)
           setScore(0)
           setSpeed(5)
-          playerRef.current = { y: 0, yVelocity: 0, jumping: false, doubleJump: false }
+          playerRef.current = { y: groundYRef.current - 50, yVelocity: 0, jumping: false, doubleJump: false }
           coinsRef.current = []
           barriersRef.current = []
         }} />
